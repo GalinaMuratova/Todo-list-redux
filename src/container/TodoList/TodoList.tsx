@@ -1,23 +1,27 @@
 import React, {useState} from 'react';
-import axiosApi from "../../axiosApi";
+import {useDispatch} from "react-redux";
+import {AppDispatch} from "../../app/store";
+import {getState, getCurrentState} from "./todoListSlice";
 
 const TodoList = () => {
     const [task, setTask] = useState('');
+    const [loading, setLoading] = useState(false);
+    const dispatch: AppDispatch = useDispatch();
     const taskInputValue = (event: React.ChangeEvent<HTMLInputElement>) => {
         setTask(event.target.value);
     };
-    const [loading, setLoading] = useState(false);
 
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            setLoading(true)
-            await axiosApi.post('tasks.json', {title: task, checked: false});
+            setLoading(true);
+            await dispatch(getState(task));
+            await dispatch(getCurrentState());
             setTask('');
         } catch (e) {
             console.log(e);
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
     };
 
@@ -34,6 +38,7 @@ const TodoList = () => {
             />
             <button type="submit">Send</button>
         </form>
+
     );
 
     if (loading) {

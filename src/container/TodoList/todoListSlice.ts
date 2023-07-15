@@ -1,17 +1,37 @@
-import {createSlice} from "@reduxjs/toolkit";
+import {createAsyncThunk, createSlice, PayloadAction} from "@reduxjs/toolkit";
+import axiosApi from "../../axiosApi";
+import { RootState } from "../../app/store";
 
 interface TodoState {
-    value: number;
+    task: string;
+    checked:boolean
 }
 
 const initialState: TodoState = {
-    value: 0,
+    task: '',
+    checked:false
 };
 
-export const counterSlice = createSlice({
-    name: 'counter',
+export const getCurrentState = createAsyncThunk<void, undefined, {state: RootState}>(
+    'todolist/increase',
+    async (arg, thunkAPI) => {
+        const current = thunkAPI.getState().todo.task;
+        await axiosApi.post('/tasks.json', {title: current, checked: false} );
+    }
+);
+
+export const todoSlice = createSlice({
+    name: "todoList",
     initialState,
-    reducers: {}
+    reducers: {
+        getState: (state, action: PayloadAction<string>) => {
+            state.task = action.payload;
+        },
+    },
+
 });
 
-export const todoReducer = counterSlice.reducer;
+
+
+export const todoReducer = todoSlice.reducer;
+export const {getState} = todoSlice.actions;
