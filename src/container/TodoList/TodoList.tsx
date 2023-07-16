@@ -1,32 +1,33 @@
-import React, {useState} from 'react';
-import {useDispatch} from "react-redux";
-import {AppDispatch} from "../../app/store";
-import {getState, getCurrentState} from "./todoListSlice";
+import React, { useEffect, useState} from 'react';
+import {useDispatch, useSelector} from "react-redux";
+import {AppDispatch, RootState} from "../../app/store";
+import {getState, getCurrentState, fetchDataNew} from "./todoListSlice";
 
 const TodoList = () => {
     const [task, setTask] = useState('');
-    const [loading, setLoading] = useState(false);
+    const items = useSelector((state: RootState) => state.todo.taskMas);
+    const loading = useSelector((state: RootState) => state.todo.loading);
+    const tasksLoading = useSelector((state:RootState) => state.todo.tasksLoading);
     const dispatch: AppDispatch = useDispatch();
+
     const taskInputValue = (event: React.ChangeEvent<HTMLInputElement>) => {
         setTask(event.target.value);
     };
 
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        try {
-            setLoading(true);
-            await dispatch(getState(task));
-            await dispatch(getCurrentState());
-            setTask('');
-        } catch (e) {
-            console.log(e);
-        } finally {
-            setLoading(false);
-        }
+        await dispatch(getState(task));
+        await dispatch(getCurrentState());
+        setTask('');
+        dispatch(fetchDataNew())
     };
 
+    useEffect(() => {
+        dispatch(fetchDataNew())
+    }, [dispatch]);
+
     let form = (
-        <form onSubmit={onSubmit}>
+        <form onSubmit={onSubmit} className='d-flex m-3'>
             <input
                 type="text"
                 required
@@ -35,19 +36,35 @@ const TodoList = () => {
                 value={task}
                 onChange={taskInputValue}
                 placeholder="Type task"
+                className='form-control'
             />
-            <button type="submit">Send</button>
+            <button type="submit" className='btn btn-primary'>Send</button>
         </form>
-
     );
 
     if (loading) {
         form = <p>Loading</p>;
     }
 
+    let tasksBlock = (
+        <>
+            {items.map((el) => (
+                <div className='m-4 border-black bg-light p-4'>
+                    <input type='checkbox' className='me-3' checked={el.checked}/>
+                    <span>{el.title}</span>
+                </div>
+            ))}
+        </>
+    );
+
+    if (tasksLoading) {
+        tasksBlock = <p>Loading</p>
+    }
+
     return (
         <div>
             {form}
+            {tasksBlock}
         </div>
     );
 };
