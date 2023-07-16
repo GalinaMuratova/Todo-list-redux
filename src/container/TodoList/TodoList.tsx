@@ -2,6 +2,7 @@ import React, { useEffect, useState} from 'react';
 import {useDispatch, useSelector} from "react-redux";
 import {AppDispatch, RootState} from "../../app/store";
 import {getState, getCurrentState, fetchDataNew} from "./todoListSlice";
+import TaskBlock from "../../components/TaskBlock/TaskBlock";
 
 const TodoList = () => {
     const [task, setTask] = useState('');
@@ -27,7 +28,7 @@ const TodoList = () => {
     }, [dispatch]);
 
     let form = (
-        <form onSubmit={onSubmit} className='d-flex m-3'>
+        <form onSubmit={onSubmit} className='d-flex my-3 mx-5'>
             <input
                 type="text"
                 required
@@ -36,7 +37,7 @@ const TodoList = () => {
                 value={task}
                 onChange={taskInputValue}
                 placeholder="Type task"
-                className='form-control'
+                className='form-control mx-3'
             />
             <button type="submit" className='btn btn-primary'>Send</button>
         </form>
@@ -49,10 +50,7 @@ const TodoList = () => {
     let tasksBlock = (
         <>
             {items.map((el) => (
-                <div className='m-4 border-black bg-light p-4'>
-                    <input type='checkbox' className='me-3' checked={el.checked}/>
-                    <span>{el.title}</span>
-                </div>
+                <TaskBlock key={el.id} id={el.id} checked={el.checked} title={el.title}/>
             ))}
         </>
     );
@@ -62,7 +60,7 @@ const TodoList = () => {
     }
 
     return (
-        <div>
+        <div className='container'>
             {form}
             {tasksBlock}
         </div>

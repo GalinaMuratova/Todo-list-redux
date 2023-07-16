@@ -1,16 +1,7 @@
 import {createAsyncThunk, createSlice, PayloadAction} from "@reduxjs/toolkit";
 import axiosApi from "../../axiosApi";
 import { RootState } from "../../app/store";
-import {IApiTask, ITask} from "../../types";
-
-interface TodoState {
-    task: string;
-    checked:boolean;
-    loading: boolean;
-    tasksLoading:boolean;
-    error: boolean;
-    taskMas:ITask[];
-}
+import {IApiTask, ITask, TodoState} from "../../types";
 
 const initialState: TodoState = {
     task: '',
@@ -19,6 +10,7 @@ const initialState: TodoState = {
     tasksLoading:false,
     error:false,
     taskMas: [],
+    id:''
 };
 
 export const fetchDataNew = createAsyncThunk(
@@ -36,14 +28,26 @@ export const fetchDataNew = createAsyncThunk(
         }
         return newTask;
     }
-)
+);
+
 export const getCurrentState = createAsyncThunk<void, undefined, {state: RootState}>(
-    'todolist/increase',
+    'todolist/getState',
     async (arg, thunkAPI) => {
         const current = thunkAPI.getState().todo.task;
         await axiosApi.post('/tasks.json', {title: current, checked: false} );
     }
 );
+
+//нужно разобраться как сделать запрос для получения и отправки данных в инпуте
+export const changeChecked = createAsyncThunk<void , undefined, {state:RootState}> (
+    'todoList/changeChecked',
+    async (arg, thunkAPI) => {
+        const current = thunkAPI.getState().todo.checked;
+        console.log(current);
+        //тут нужно доделать
+        await axiosApi.put(`tasks.json`)
+    }
+)
 
 export const todoSlice = createSlice({
     name: "todoList",
@@ -52,6 +56,10 @@ export const todoSlice = createSlice({
         getState: (state, action: PayloadAction<string>) => {
             state.task = action.payload;
         },
+        getId: (state, action:PayloadAction<string>) => {
+            state.id = action.payload;
+            console.log(action.payload)
+        }
     },
     extraReducers: (builder) => {
         builder.addCase(fetchDataNew.pending, (state) => {
@@ -61,7 +69,6 @@ export const todoSlice = createSlice({
         builder.addCase(fetchDataNew.fulfilled, (state, action) => {
             state.tasksLoading = false;
             state.taskMas = action.payload;
-            console.log(action.payload)
         });
         builder.addCase(fetchDataNew.rejected, (state) => {
             state.loading = false;
@@ -70,7 +77,6 @@ export const todoSlice = createSlice({
         builder.addCase(getCurrentState.pending, (state) => {
             state.loading = true;
             state.error = false;
-            console.log(state.loading)
             getCurrentState();
         });
         builder.addCase(getCurrentState.fulfilled, (state, action) => {
@@ -82,7 +88,5 @@ export const todoSlice = createSlice({
     },
 });
 
-
-
 export const todoReducer = todoSlice.reducer;
-export const {getState} = todoSlice.actions;
+export const {getState, getId} = todoSlice.actions;
