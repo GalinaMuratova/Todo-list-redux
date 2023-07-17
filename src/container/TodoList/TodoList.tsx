@@ -1,9 +1,8 @@
 import React, { useEffect, useState} from 'react';
 import {useDispatch, useSelector} from "react-redux";
 import {AppDispatch, RootState} from "../../app/store";
-import {getState, getCurrentState, fetchDataNew} from "./todoListSlice";
+import {getCurrentState, fetchDataNew, changeChecked, deleteTask} from "./todoListSlice";
 import TaskBlock from "../../components/TaskBlock/TaskBlock";
-
 const TodoList = () => {
     const [task, setTask] = useState('');
     const items = useSelector((state: RootState) => state.todo.taskMas);
@@ -11,21 +10,34 @@ const TodoList = () => {
     const tasksLoading = useSelector((state:RootState) => state.todo.tasksLoading);
     const dispatch: AppDispatch = useDispatch();
 
+    useEffect(() => {
+        dispatch(fetchDataNew());
+    }, [dispatch]);
+
     const taskInputValue = (event: React.ChangeEvent<HTMLInputElement>) => {
         setTask(event.target.value);
     };
-
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        await dispatch(getState(task));
-        await dispatch(getCurrentState());
+        await dispatch(getCurrentState({
+            title: task,
+            checked: false,
+        }));
         setTask('');
-        dispatch(fetchDataNew())
+        dispatch(fetchDataNew());
     };
 
-    useEffect(() => {
-        dispatch(fetchDataNew())
-    }, [dispatch]);
+    const onEditTaskStatusHandler = async (id: string) => {
+        await dispatch(changeChecked(id));
+        await dispatch(fetchDataNew());
+    };
+
+    const deleteBlock = async(taskId : string) => {
+        if (window.confirm(`Do you want to delete task?`)) {
+            await dispatch(deleteTask(taskId));
+            await dispatch(fetchDataNew());
+        }
+    };
 
     let form = (
         <form onSubmit={onSubmit} className='d-flex my-3 mx-5'>
@@ -50,7 +62,7 @@ const TodoList = () => {
     let tasksBlock = (
         <>
             {items.map((el) => (
-                <TaskBlock key={el.id} id={el.id} checked={el.checked} title={el.title}/>
+                <TaskBlock onEdit={onEditTaskStatusHandler} key={el.id} id={el.id} checked={el.checked} title={el.title} onDelete={() => deleteBlock(el.id)}/>
             ))}
         </>
     );

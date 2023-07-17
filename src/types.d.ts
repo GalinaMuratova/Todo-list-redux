@@ -4,15 +4,17 @@ export interface ITask {
     title:string,
 }
 
+export interface ITaskMutation {
+    checked:boolean,
+    title:string,
+}
+
 export interface IApiTask {
     [id:string]: ITask;
 }
 export interface TodoState {
-    task: string;
-    checked:boolean;
     loading: boolean;
     tasksLoading:boolean;
     error: boolean;
     taskMas:ITask[];
-    id:string
 }

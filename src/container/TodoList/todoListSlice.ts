@@ -1,26 +1,23 @@
-import {createAsyncThunk, createSlice, PayloadAction} from "@reduxjs/toolkit";
+import {createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axiosApi from "../../axiosApi";
-import { RootState } from "../../app/store";
-import {IApiTask, ITask, TodoState} from "../../types";
+import {IApiTask, ITask, ITaskMutation, TodoState} from "../../types";
+import {RootState} from "../../app/store";
 
 const initialState: TodoState = {
-    task: '',
-    checked:false,
     loading:false,
     tasksLoading:false,
     error:false,
     taskMas: [],
-    id:''
 };
 
-export const fetchDataNew = createAsyncThunk(
+export const fetchDataNew = createAsyncThunk<ITask[]>(
     'todoList/fetch',
     async () => {
         const response = await axiosApi.get<IApiTask>('tasks.json');
         const newResponse = response.data;
         let newTask:ITask[] = [];
         if (newResponse) {
-             newTask = Object.keys(response.data).map((key) => {
+            newTask = Object.keys(response.data).map((key) => {
                 const newPost = response.data[key];
                 newPost.id = key;
                 return newPost;
@@ -30,37 +27,35 @@ export const fetchDataNew = createAsyncThunk(
     }
 );
 
-export const getCurrentState = createAsyncThunk<void, undefined, {state: RootState}>(
+export const getCurrentState = createAsyncThunk<void, ITaskMutation>(
     'todolist/getState',
-    async (arg, thunkAPI) => {
-        const current = thunkAPI.getState().todo.task;
-        await axiosApi.post('/tasks.json', {title: current, checked: false} );
+    async (task,) => {
+        await axiosApi.post('/tasks.json', task);
+    }
+);
+export const changeChecked = createAsyncThunk<void , string, {state:RootState}> (
+    'todoList/changeChecked',
+    async (id, thunkAPI) => {
+        const tasks = thunkAPI.getState().todo.taskMas;
+        const currentTask = tasks.filter(task => task.id === id)[0];
+        await axiosApi.put(`/tasks/${id}.json`, {
+            ...currentTask,
+            checked : !currentTask.checked
+        });
     }
 );
 
-//нужно разобраться как сделать запрос для получения и отправки данных в инпуте
-export const changeChecked = createAsyncThunk<void , undefined, {state:RootState}> (
-    'todoList/changeChecked',
-    async (arg, thunkAPI) => {
-        const current = thunkAPI.getState().todo.checked;
-        console.log(current);
-        //тут нужно доделать
-        await axiosApi.put(`tasks.json`)
+export const deleteTask = createAsyncThunk<void, string>(
+    'todoList/deleteTask',
+    async (taskId) => {
+        await axiosApi.delete(`/tasks/${taskId}.json`);
     }
-)
+);
 
 export const todoSlice = createSlice({
     name: "todoList",
     initialState,
-    reducers: {
-        getState: (state, action: PayloadAction<string>) => {
-            state.task = action.payload;
-        },
-        getId: (state, action:PayloadAction<string>) => {
-            state.id = action.payload;
-            console.log(action.payload)
-        }
-    },
+    reducers: {},
     extraReducers: (builder) => {
         builder.addCase(fetchDataNew.pending, (state) => {
             state.tasksLoading = true;
@@ -77,16 +72,33 @@ export const todoSlice = createSlice({
         builder.addCase(getCurrentState.pending, (state) => {
             state.loading = true;
             state.error = false;
-            getCurrentState();
         });
-        builder.addCase(getCurrentState.fulfilled, (state, action) => {
+        builder.addCase(getCurrentState.fulfilled, (state) => {
             state.loading = false;
         });
         builder.addCase(getCurrentState.rejected,  (state) => {
             state.loading = false;
+            state.error = true;
+        });
+        builder.addCase(changeChecked.pending, (state) => {
+            state.error = false;
+        });
+        builder.addCase(changeChecked.fulfilled, () => {
+
+        });
+        builder.addCase(changeChecked.rejected,  (state) => {
+            state.error = true;
+        });
+        builder.addCase(deleteTask.pending, (state) => {
+            state.error = false;
+        });
+        builder.addCase(deleteTask.fulfilled, () => {
+
+        });
+        builder.addCase(deleteTask.rejected,  (state) => {
+            state.error = true;
         });
     },
 });
 
 export const todoReducer = todoSlice.reducer;
-export const {getState, getId} = todoSlice.actions;
